@@ -40,3 +40,4 @@ export function addBatteryListener(callback: (level: number) => void): void {
     );
   }
 }
+

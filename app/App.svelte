@@ -1,4 +1,37 @@
-<script lang="ts" href="modules/home.ts"/>
+<script lang="ts">
+  import { Application } from '@nativescript/core';
+  import { onMount } from 'svelte';
+  import { getBatteryLevel, addBatteryListener } from './modules/battery';
+  import { Talk } from './modules/talk';
+  import { getTemperature } from "./modules/temp";
+
+  declare const android: any;
+
+  const talker = new Talk();
+  let time = new Date().toLocaleTimeString();
+  let date = new Date().toLocaleDateString();
+  let temp = getTemperature();
+  let batteryLevel: number | undefined;
+
+  setInterval(() => { time = new Date().toLocaleTimeString(); }, 1000);
+
+  onMount(() => {
+      batteryLevel = getBatteryLevel();
+      addBatteryListener((level: number) => { batteryLevel = level; });
+
+      return () => {
+          if (Application.android) {
+              const intentAction = android.content.Intent.ACTION_BATTERY_CHANGED;
+              Application.android.unregisterBroadcastReceiver(intentAction);
+          }
+      };
+  });
+
+  function talk() {
+      talker.start();
+  }
+
+</script>
 
 <style>
   @font-face {
@@ -8,7 +41,7 @@
     font-style: normal;
   }
 
-  body {
+  body, section {
     margin: 0;
     padding: 0;
     font-family: 'Onest', sans-serif;
@@ -16,6 +49,7 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
+    width: 100vw;
   }
 
   header {
@@ -51,16 +85,20 @@
 </style>
 
 <body>
-  <header>
-    <h5>{batteryLevel}</h5>
-  </header>
+  <a onclick="talk()">
+    <section>
+      <header>
+        <h5>{batteryLevel}</h5>
+      </header>
 
-  <main>
-      <h1>{time}</h1>
-      <h2>{date}</h2>
-  </main>
+      <main>
+          <h1>{time}</h1>
+          <h2>{date}</h2>
+      </main>
 
-  <footer>
-    <h5>{temp}</h5>
-  </footer>
+      <footer>
+        <h5>{temp}</h5>
+      </footer>
+    </section>
+  </a>
 </body>
