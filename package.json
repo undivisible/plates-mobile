@@ -1,7 +1,7 @@
 {
   "name": "mobile",
   "main": "app/app.ts",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "private": true,
   "dependencies": {
     "@huggingface/transformers": "^3.3.2",
@@ -19,5 +19,19 @@
     "svelte-native-preprocessor": "^1.0.0",
     "svelte-preprocess": "^5.1.4",
     "typescript": "~5.4.5"
-  }
+  },
+  "description": "plates mobile app (platform of the Internet as a technologically enabled singularity, a unitary platform of systems to establish healthy relationships between you and your devices",
+  "scripts": {
+    "test": "ns run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/platesos/mobile.git"
+  },
+  "author": "Max Lee Abdurrahman As-Salafi Carter",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/platesos/mobile/issues"
+  },
+  "homepage": "https://github.com/platesos/mobile#readme"
 }
