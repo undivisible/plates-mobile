@@ -13,9 +13,7 @@ export class Talk extends Observable {
     }
 
     async initModel() {
-        console.log('Loading Whisper model...');
         this.model = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
-        console.log('Model loaded!');
     }
 
     async start() {
@@ -37,6 +35,7 @@ export class Talk extends Observable {
     }
 
     stop() {
+      export let prompt = transcription.text;
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
         }

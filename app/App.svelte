@@ -1,9 +1,10 @@
+<!-- بسم الله الرحمن الرحيم-->
 <script lang="ts">
   import { Application } from '@nativescript/core';
   import { onMount } from 'svelte';
   import { getBatteryLevel, addBatteryListener } from './modules/battery';
-  import { Talk } from './modules/talk';
   import { getTemperature } from "./modules/temp";
+  import { Talk, prompt } from "~/modules/talk";
 
   declare const android: any;
 
@@ -27,8 +28,13 @@
       };
   });
 
-  function talk() {
-      talker.start();
+  function talk() {talker.start();}
+  function end() {
+    try {
+      talker.stop();
+      const result = await search(prompt);
+    }
+    catch(error) {}
   }
 
 </script>
@@ -57,6 +63,8 @@
     top: 0;
     right: 0;
     padding: 1rem;
+    height: 5vh;
+    width: 100vw;
   }
 
   main {
@@ -75,6 +83,7 @@
   h1 {font-size: 4rem;}
   h2, h5 {font-size: 2rem;}
   h5 {opacity: 0.5;}
+  h5.battery {float: right;}
 
   footer {
     position: absolute;
@@ -85,10 +94,11 @@
 </style>
 
 <body>
-  <a onclick="talk()">
+  <div on:touchstart|preventDefault={talk} on:touchend={end}>
     <section>
       <header>
-        <h5>{batteryLevel}</h5>
+        <h5>{error}</h5>
+        <h5 class="battery">{batteryLevel}</h5>
       </header>
 
       <main>
@@ -100,5 +110,5 @@
         <h5>{temp}</h5>
       </footer>
     </section>
-  </a>
+  </div>
 </body>
