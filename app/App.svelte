@@ -5,6 +5,7 @@
   import { getBatteryLevel, addBatteryListener } from './modules/battery';
   import { getTemperature } from "./modules/temp";
   import { Talk, prompt } from "~/modules/talk";
+  import { search } from "~/modules/search";
 
   declare const android: any;
 
@@ -13,6 +14,7 @@
   let date = new Date().toLocaleDateString();
   let temp = getTemperature();
   let batteryLevel: number | undefined;
+  let error: string = '';
 
   setInterval(() => { time = new Date().toLocaleTimeString(); }, 1000);
 
@@ -28,13 +30,19 @@
       };
   });
 
-  function talk() {talker.start();}
-  function end() {
+  function talk() {
+    talker.start();
+  }
+
+  async function end() {
     try {
       talker.stop();
       const result = await search(prompt);
+      // Handle the result as needed
     }
-    catch(error) {}
+    catch(err) {
+      error = err instanceof Error ? err.message : 'An error occurred';
+    }
   }
 
 </script>

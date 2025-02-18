@@ -60,7 +60,7 @@ async function search(query: string): Promise<string> {
 
   const combinedText = pageContents.join(" ").slice(0, 5000);
   const summary = await summarizeContent(combinedText);
-  return const final = await finalTextGeneration(summary + "&nbsp" + prompt);
+  return await finalTextGeneration(summary + "&nbsp" + prompt);
 }
 
 async function finalTextGeneration(query: string): Promise<string> {
@@ -71,15 +71,15 @@ async function finalTextGeneration(query: string): Promise<string> {
   );
 
   const messages = [
-    { role: "user", content: query},
+    { role: "user", content: query },
   ];
 
   const streamer = new TextStreamer(generator.tokenizer, {
     skip_prompt: true,
-  })
+  });
 
   const output = await generator(messages, { max_new_tokens: 512, do_sample: false, streamer });
-  return output[0].generated_text.at(-1).content;
+  return output[0].generated_text;
 }
 
-
+export { search };

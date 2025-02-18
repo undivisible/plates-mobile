@@ -1,7 +1,7 @@
 {
-  "name": "mobile",
+  "name": "Plates",
   "main": "app/app.ts",
-  "version": "0.0.1",
+  "version": "0.0.1-experimental.m",
   "private": true,
   "dependencies": {
     "@huggingface/transformers": "^3.3.2",

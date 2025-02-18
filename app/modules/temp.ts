@@ -1,8 +1,29 @@
 import { Http } from "@nativescript/core";
 import * as Geolocation from "@nativescript/geolocation";
 
-export async function getTemperature(): Promise<string> {
+interface WeatherResponse {
+    current_weather?: {
+        temperature: number;
+    };
+}
+
+export async function getTemperature(): Promise<string | undefined> {
     try {
+        // Check for location permissions first
+        const hasPermission = await Geolocation.hasLocationPermission();
+        if (!hasPermission) {
+            const granted = await Geolocation.requestLocationPermission();
+            if (!granted) {
+                throw new Error("Location permission denied");
+            }
+        }
+
+        // Enable location services if needed
+        const isEnabled = await Geolocation.isEnabled();
+        if (!isEnabled) {
+            await Geolocation.enableLocationRequest();
+        }
+
         const location = await Geolocation.getCurrentLocation({
             desiredAccuracy: 3,
             updateDistance: 10,
@@ -20,15 +41,14 @@ export async function getTemperature(): Promise<string> {
             method: "GET",
         });
 
-        // @ts-ignore
-      const data = response.content.toJSON();
-        if (data && data.current_weather) {
+        const data = response.content.toJSON() as WeatherResponse;
+        if (data?.current_weather?.temperature !== undefined) {
             return `Temperature: ${data.current_weather.temperature}°C`;
         } else {
             throw new Error("Invalid response from API");
         }
     } catch (error) {
         console.error("Error fetching temperature:", error);
-        return "Failed to get temperature";
+        return error instanceof Error ? error.message : "Failed to get temperature";
     }
 }

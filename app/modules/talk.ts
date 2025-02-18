@@ -1,6 +1,8 @@
 import { Observable } from '@nativescript/core';
 import { pipeline } from '@huggingface/transformers';
 
+export let prompt: string = '';
+
 export class Talk extends Observable {
     private audioContext!: AudioContext;
     private processor!: ScriptProcessorNode;
@@ -17,7 +19,7 @@ export class Talk extends Observable {
     }
 
     async start() {
-        this.audioContext = new (window.AudioContext || window.AudioContext)();
+        this.audioContext = new AudioContext();
         this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const source = this.audioContext.createMediaStreamSource(this.stream);
 
@@ -30,12 +32,12 @@ export class Talk extends Observable {
             const audioArray = Array.from(inputBuffer);
 
             const transcription = await this.model(audioArray);
+            prompt = transcription.text;
             this.notify({ eventName: 'transcription', object: this, transcription: transcription.text });
         };
     }
 
     stop() {
-      export let prompt = transcription.text;
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
         }
