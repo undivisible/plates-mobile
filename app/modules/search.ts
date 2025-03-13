@@ -1,4 +1,4 @@
-import { pipeline } from "@huggingface/transformers";
+import { pipeline, TextStreamer } from "@huggingface/transformers";
 import { JSDOM } from "jsdom";
 import { prompt } from "~/modules/talk";
 
@@ -46,40 +46,46 @@ async function fetchEssentialContent(url: string): Promise<string> {
 }
 
 async function summarizeContent(text: string): Promise<string> {
-  const generator = await pipeline("summarization", "onnx-community/T5");
-  const summary = await generator(text, { max_new_tokens: 512, do_sample: false });
-  return summary[0].summary_text;
+  const generator = await pipeline("summarization", "onnx-community/granite-3.0-2b-instruct");
+  const summary = await generator(text, { max_new_tokens: 512, do_sample: false } as any);
+  return (summary[0] as any).summary_text;
 }
 
 async function search(query: string): Promise<string> {
-  const apiKey = "AIzaSyAhhqXAR-v2gJJorP6xKBywS6g0ia5L6V0";
-  const searchEngineId = "31e96f50d042941f0";
+  const apiKey = process.env.GOOGLE_API_KEY;
+  const searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
+  if (!apiKey || !searchEngineId) {
+    throw new Error("API Key or Search Engine ID is not set in environment variables.");
+  }
 
   const links = await getFirstTenSearchResults(apiKey, searchEngineId, query);
   const pageContents = await Promise.all(links.map(fetchEssentialContent));
 
-  const combinedText = pageContents.join(" ").slice(0, 5000);
+  const combinedText = pageContents.join(" ");
   const summary = await summarizeContent(combinedText);
-  return await finalTextGeneration(summary + "&nbsp" + prompt);
+  return await finalTextGeneration(summary + " " + prompt);
 }
 
 async function finalTextGeneration(query: string): Promise<string> {
   const generator = await pipeline(
-    "text-generation",
-    "onnx-community/DeepSeek-R1-Distill-Qwen-1.5B-ONNX",
-    { dtype: "quantized" },
+      "text-generation",
+      "onnx-community/granite-3.0-2b-instruct", 
+      { dtype: "q4f16", device: "webgpu" }
   );
-
-  const messages = [
-    { role: "user", content: query },
-  ];
-
+  const finalGenerationPrompt = "Final Answer: " + query;
   const streamer = new TextStreamer(generator.tokenizer, {
-    skip_prompt: true,
+      skip_prompt: true,
   });
 
-  const output = await generator(messages, { max_new_tokens: 512, do_sample: false, streamer });
-  return output[0].generated_text;
+  const output = await generator(finalGenerationPrompt, {
+      max_new_tokens: 2048,
+      temperature: 0.7,
+      do_sample: false,
+      eos_token_id: generator.tokenizer.eos_token_id,
+      repetition_penalty: 1.1,
+      streamer
+  });
+  return (output[0] as any).generated_text;
 }
 
 export { search };

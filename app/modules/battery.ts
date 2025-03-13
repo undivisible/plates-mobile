@@ -16,7 +16,7 @@ export function getBatteryLevel(): number | undefined {
                 batteryLevel = batteryManager.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY);
             } else {
                 const intentFilter = new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED);
-                const intent = context.registerReceiver(null, intentFilter);
+                const intent = context.registerReceiver(new android.content.BroadcastReceiver(), intentFilter);
                 if (intent) {
                     batteryLevel = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
                 }
@@ -60,12 +60,10 @@ export function addBatteryListener(callback: (level: number) => void): () => voi
                 }
             );
 
-            // Return cleanup function
+            // Return cleanup function for iOS
             return () => {
-                if (Device.os === 'iOS') {
-                    UIDevice.currentDevice.removeObserver(observer);
-                    UIDevice.currentDevice.batteryMonitoringEnabled = false;
-                }
+                UIDevice.currentDevice.removeObserver(observer);
+                UIDevice.currentDevice.batteryMonitoringEnabled = false;
             };
         }
 

@@ -1,5 +1,6 @@
 import { Http } from "@nativescript/core";
 import * as Geolocation from "@nativescript/geolocation";
+import type { Location } from "@nativescript/geolocation";
 
 interface WeatherResponse {
     current_weather?: {
@@ -10,12 +11,9 @@ interface WeatherResponse {
 export async function getTemperature(): Promise<string | undefined> {
     try {
         // Check for location permissions first
-        const hasPermission = await Geolocation.hasLocationPermission();
+        const hasPermission = await Geolocation.isEnabled();
         if (!hasPermission) {
-            const granted = await Geolocation.requestLocationPermission();
-            if (!granted) {
-                throw new Error("Location permission denied");
-            }
+            await Geolocation.enableLocationRequest(false, true);
         }
 
         // Enable location services if needed
@@ -24,7 +22,7 @@ export async function getTemperature(): Promise<string | undefined> {
             await Geolocation.enableLocationRequest();
         }
 
-        const location = await Geolocation.getCurrentLocation({
+        const location: Location = await Geolocation.getCurrentLocation({
             desiredAccuracy: 3,
             updateDistance: 10,
             maximumAge: 5000,
@@ -41,6 +39,9 @@ export async function getTemperature(): Promise<string | undefined> {
             method: "GET",
         });
 
+        if (!response.content) {
+            throw new Error("No content in response");
+        }
         const data = response.content.toJSON() as WeatherResponse;
         if (data?.current_weather?.temperature !== undefined) {
             return `Temperature: ${data.current_weather.temperature}°C`;
