@@ -1,69 +1,112 @@
 <!-- بسم الله الرحمن الرحيم-->
-<script lang="ts" context="module">
-  import { Application } from '@nativescript/core';
-  import { onMount } from 'svelte';
-  import { getBatteryLevel, addBatteryListener } from './modules/battery';
-  import { getTemperature } from "./modules/temp";
-  import { Talk, prompt } from "~/modules/talk";
-  import { search } from "~/modules/search";
-
+<script context="module" lang="ts">
   declare const android: any;
-
-  const talker = new Talk();
-  let time = new Date().toLocaleTimeString();
-  let date = new Date().toLocaleDateString();
-  let temp = getTemperature();
-  let batteryLevel: number | undefined;
-  let error: string = '';
-
-  setInterval(() => { time = new Date().toLocaleTimeString(); }, 1000);
-
-  onMount(() => {
-      batteryLevel = getBatteryLevel();
-      addBatteryListener((level: number) => { batteryLevel = level; });
-
-      return () => {
-          if (Application.android) {
-              const intentAction = android.content.Intent.ACTION_BATTERY_CHANGED;
-              Application.android.unregisterBroadcastReceiver(intentAction);
-          }
-      };
-  });
-
-  function talk() {
-    talker.start();
-  }
-
-  async function end() {
-    try {
-      talker.stop();
-      const result = await search(prompt);
-      // Handle the result as needed
-    }
-    catch(err) {
-      error = err instanceof Error ? err.message : 'An error occurred';
-    }
-  }
-
-  export { time, date, temp, batteryLevel, error };
 </script>
 
-<body>
-  <div on:touchstart|preventDefault={talk} on:touchend={end}>
-    <section>
-      <header>
-        <h5>{error}</h5>
-        <h5 class="battery">{batteryLevel}</h5>
-      </header>
+<script lang="ts">
+  import { Application } from '@nativescript/core';
+  import { onMount, onDestroy } from 'svelte';
+  import { Talk, prompt } from "./modules/talk";
+  import { search } from "./modules/search";
+  import Home from './pages/home.svelte';
+  import Result from './pages/result.svelte';
+  
+  // Import CSS styles
+  import "./app.css";
 
-      <main>
-          <h1>{time}</h1>
-          <h2>{date}</h2>
-      </main>
+  const talker = new Talk();
+  let currentPage: 'home' | 'result' = 'home';
+  let searchResult: string = '';
+  let searchTitle: string = '';
+  let isSearching: boolean = false;
+  let error: string = '';
+  
+  // Handle voice recording start
+  function startRecording() {
+    talker.start();
+    // Listen for transcription updates
+    talker.on('transcription', (args: any) => {
+      console.log('Transcription:', args.transcription);
+    });
+  }
 
-      <footer>
-        <h5>{temp}</h5>
-      </footer>
-    </section>
-  </div>
-</body>
+  // Handle voice recording end and search
+  async function endRecordingAndSearch() {
+    try {
+      isSearching = true;
+      talker.stop();
+      
+      // Extract a title from the prompt
+      searchTitle = prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt;
+      
+      // Perform search
+      searchResult = await search(prompt);
+      
+      // Navigate to result page
+      currentPage = 'result';
+      isSearching = false;
+    }
+    catch(err) {
+      isSearching = false;
+      error = err instanceof Error ? err.message : 'An error occurred';
+      console.error('Search error:', error);
+    }
+  }
+
+  // Handle navigation back to home
+  function navigateToHome() {
+    currentPage = 'home';
+  }
+
+  onMount(() => {
+    // Initialize any app-level resources here
+    console.log('App mounted');
+  });
+  
+  onDestroy(() => {
+    // Clean up any app-level resources here
+    console.log('App destroyed');
+  });
+</script>
+
+<style>
+  /* App-level styles */
+  .loading-indicator {
+    color: #ffffff;
+    font-size: 24;
+    text-align: center;
+    margin-top: 20;
+  }
+  
+  .error-message {
+    color: #ff5252;
+    font-size: 18;
+    text-align: center;
+    margin: 20;
+  }
+</style>
+
+<page>
+  <actionBar visibility="collapsed"></actionBar>
+  
+  {#if error}
+    <gridLayout rows="*" columns="*" backgroundColor="#000000">
+      <label row={0} col={0} class="error-message" text={error} textWrap="true" />
+    </gridLayout>
+  {:else if isSearching}
+    <gridLayout rows="*" columns="*" backgroundColor="#000000">
+      <label row={0} col={0} class="loading-indicator" text="Searching..." />
+    </gridLayout>
+  {:else if currentPage === 'home'}
+    <Home 
+      on:startRecording={startRecording}
+      on:endRecording={endRecordingAndSearch}
+    />
+  {:else}
+    <Result 
+      title={searchTitle}
+      text={searchResult}
+      on:navigate={navigateToHome}
+    />
+  {/if}
+</page>

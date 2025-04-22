@@ -13,8 +13,8 @@
       "~/*": ["app/*"],
       "@/*": ["app/*"]
     },
-    "typeRoots": ["types"],
-    "types": ["node"],
+    "typeRoots": ["types", "node_modules/@types"],
+    "types": [],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
